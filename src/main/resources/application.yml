@@ -1,0 +1,25 @@
+spring:
+  rabbitmq:
+    host: 172.86.93.100
+    port: 21003
+    username: ${RABBIT_USER}
+    password: ${RABBIT_PASSWORD}
+  queues:
+    message-queue: message-queue
+    db-queue: db-queue
+    log-queue: log-queue
+server:
+  port: 8080
+  tomcat:
+    threads:
+      max: 1000
+      min-spare: 100
+logging:
+  file:
+    name: logs/app.log
+  level:
+    root: INFO
+    ru.syncra.controller: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+
