@@ -16,7 +16,7 @@ server:
       min-spare: 100
 logging:
   file:
-    name: logs/app.log
+    name: logs/syncra_router.log
   level:
     root: INFO
     ru.syncra.controller: DEBUG

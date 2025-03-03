@@ -23,7 +23,9 @@ services:
       - "traefik.http.routers.syncra_router.entrypoints=web"
       - "traefik.http.routers.syncra_router.entrypoints=websecure"
       - "traefik.http.routers.syncra_router.tls.certresolver=myresolver"
-      - "traefik.http.services.syncra_router.loadbalancer.server.port=80"
+      - "traefik.http.services.syncra_router.loadbalancer.server.port=8080"
       - "traefik.docker.network=traefik-web"
     expose:
       - 8080
+    volumes:
+      - /syncra/logs:/app/logs
