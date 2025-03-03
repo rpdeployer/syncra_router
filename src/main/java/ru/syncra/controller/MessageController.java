@@ -78,8 +78,7 @@ public class MessageController {
 
     private void sendToQueue(String queue, String message) {
         try {
-//            rabbitTemplate.convertAndSend(queue, objectMapper.readTree(message));
-            rabbitTemplate.convertAndSend(queue, message);
+            rabbitTemplate.convertAndSend(queue, objectMapper.readTree(message));
             logger.info("Сообщение отправлено в очередь {}: {}", queue, message);
         } catch (Exception e) {
             logger.error("Ошибка при обработке JSON для очереди {}: {}", queue, e.getMessage(), e);

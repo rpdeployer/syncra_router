@@ -1,7 +1,7 @@
 spring:
   rabbitmq:
-    host: 172.86.93.100
-    port: 21003
+    host: ${RABBIT_HOST}
+    port: ${RABBIT_PORT}
     username: ${RABBIT_USER}
     password: ${RABBIT_PASSWORD}
   queues:
