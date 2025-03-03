@@ -101,7 +101,7 @@ jobs:
           echo "${{ secrets.SSH_KEY }}" > key.pem
           chmod 600 key.pem
           ssh -o StrictHostKeyChecking=no -i key.pem ${{ secrets.USER }}@${{ secrets.HOST }} << 'EOF'
-            cd ${{ secrets.USER }}/${{ secrets.DIR }}
+            cd /${{ secrets.USER }}/${{ secrets.DIR }}
             docker-compose down -v
             docker-compose up -d --build
           EOF
