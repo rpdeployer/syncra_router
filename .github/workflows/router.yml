@@ -77,7 +77,7 @@ jobs:
           echo "RABBIT_PASSWORD=${{ secrets.RABBIT_PASSWORD }}" >> .env
           echo "${{ secrets.SSH_KEY }}" > key.pem
           chmod 600 key.pem
-          scp -o StrictHostKeyChecking=no -i key.pem .env ${{ secrets.USER }}@${{ secrets.HOST }}:/home/user/
+          scp -o StrictHostKeyChecking=no -i key.pem .env ${{ secrets.USER }}@${{ secrets.HOST }}:/${{ secrets.USER }}/${{ secrets.DIR }}
 
       - name: Load Container
         run: |
