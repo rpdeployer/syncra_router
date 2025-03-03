@@ -102,6 +102,7 @@ jobs:
           chmod 600 key.pem
           ssh -o StrictHostKeyChecking=no -i key.pem ${{ secrets.USER }}@${{ secrets.HOST }} << 'EOF'
             cd /${{ secrets.USER }}/${{ secrets.DIR }}
+            source .env
             docker-compose down -v
             docker-compose up -d --build
           EOF

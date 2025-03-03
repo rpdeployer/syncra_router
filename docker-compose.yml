@@ -6,7 +6,7 @@ networks:
 
 services:
   router:
-    build: syncra/router:${ROUTER_VERSION}
+    image: syncra/router:${ROUTER_VERSION}
     container_name: syncra_router
     restart: unless-stopped
     environment:
