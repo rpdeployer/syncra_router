@@ -4,6 +4,7 @@ spring:
     port: ${RABBIT_PORT}
     username: ${RABBIT_USER}
     password: ${RABBIT_PASSWORD}
+    virtual-host: ${RABBIT_VHOST}
   queues:
     message-queue: message-queue
     db-queue: db-queue

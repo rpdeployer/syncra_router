@@ -77,6 +77,7 @@ jobs:
           echo "RABBIT_HOST=${{ secrets.RABBIT_HOST }}" >> .env
           echo "RABBIT_PORT=${{ secrets.RABBIT_PORT }}" >> .env
           echo "RABBIT_USER=${{ secrets.RABBIT_USER }}" >> .env
+          echo "RABBIT_VHOST=${{ secrets.RABBIT_VHOST }}" >> .env
           echo "RABBIT_PASSWORD=${{ secrets.RABBIT_PASSWORD }}" >> .env
           echo "${{ secrets.SSH_KEY }}" > key.pem
           chmod 600 key.pem
