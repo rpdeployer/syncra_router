@@ -20,7 +20,7 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.syncra_router.rule=Host(`router.syncra.me`)"
-      - "traefik.http.routers.syncra_router.entrypoints=web"
+      - "traefik.http.routers.syncra_router.entrypoints=http"
       - "traefik.http.services.syncra_router.loadbalancer.server.port=80"
       - "traefik.docker.network=traefik-web"
     expose:
