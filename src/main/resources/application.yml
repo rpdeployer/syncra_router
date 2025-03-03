@@ -9,7 +9,7 @@ spring:
     db-queue: db-queue
     log-queue: log-queue
 server:
-  port: 8080
+  port: 80
   tomcat:
     threads:
       max: 1000
