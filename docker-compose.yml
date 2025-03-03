@@ -26,6 +26,7 @@ services:
       - "traefik.http.services.syncra_router.loadbalancer.server.port=8080"
       - "traefik.docker.network=traefik-web"
     expose:
-      - 8080
+      - 80
+      - 443
     volumes:
       - /syncra/logs:/app/logs
