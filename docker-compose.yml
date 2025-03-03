@@ -1,33 +1,29 @@
 version: '3.8'
 
-services:
-  parser:
-    image: "./syncra_parser"
-    container_name: syncra_parser
-    environment:
-      SPRING_RABBITMQ_HOST: ${RABBIT_HOST}
-      RABBIT_HOST: ${RABBIT_HOST}
-      RABBIT_PORT: ${RABBIT_PORT}
-      RABBIT_USER: ${RABBIT_USER}
-      RABBIT_PASSWORD: ${RABBIT_PASSWORD}
-      CORE_URL: ${CORE_URL}
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.myapp.rule=Host(`parser.syncra.me`)"
-      - "traefik.http.routers.myapp.entrypoints=websecure"
-      - "traefik.http.routers.myapp.tls.certresolver=myresolver"
+networks:
+  traefik-web:
+    external: true
 
+services:
   router:
-    build: "./syncra_router"
+    build: syncra/router:${ROUTER_VERSION}
     container_name: syncra_router
+    restart: unless-stopped
     environment:
       SPRING_RABBITMQ_HOST: ${RABBIT_HOST}
       RABBIT_HOST: ${RABBIT_HOST}
       RABBIT_PORT: ${RABBIT_PORT}
       RABBIT_USER: ${RABBIT_USER}
       RABBIT_PASSWORD: ${RABBIT_PASSWORD}
+    networks:
+      - traefik-web
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.myapp.rule=Host(`router.syncra.me`)"
-      - "traefik.http.routers.myapp.entrypoints=websecure"
-      - "traefik.http.routers.myapp.tls.certresolver=myresolver"
+      - "traefik.http.routers.syncra_router.rule=Host(`router.syncra.me`)"
+      - "traefik.http.routers.syncra_router.entrypoints=web"
+      - "traefik.http.routers.syncra_router.entrypoints=websecure"
+      - "traefik.http.routers.syncra_router.tls.certresolver=myresolver"
+      - "traefik.http.services.syncra_router.loadbalancer.server.port=8080"
+      - "traefik.docker.network=traefik-web"
+    ports:
+      - "8080:8080"
