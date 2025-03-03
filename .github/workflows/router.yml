@@ -43,8 +43,8 @@ jobs:
 
       - name: Build Docker Image
         run: |
-          docker build . -t syncra/parser:${{ env.ROUTER_VERSION }}
-          docker save -o parser.tar syncra/parser:${{ env.ROUTER_VERSION }}
+          docker build . -t syncra/router:${{ env.ROUTER_VERSION }}
+          docker save -o parser.tar syncra/router:${{ env.ROUTER_VERSION }}
 
       - name: Upload Docker Image as Artifact
         uses: actions/upload-artifact@v4
