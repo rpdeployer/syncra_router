@@ -84,7 +84,7 @@ jobs:
           echo "${{ secrets.SSH_KEY }}" > key.pem
           chmod 600 key.pem
           ssh -o StrictHostKeyChecking=no -i key.pem ${{ secrets.USER }}@${{ secrets.HOST }} << 'EOF'
-            docker load -i /${{ secrets.USER }}/parser.tar
+            docker load -i /${{ secrets.USER }}/${{ secrets.DIR }}/parser.tar
           EOF
 
       - name: Copy docker-compose.yml to Server
