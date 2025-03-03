@@ -1,11 +1,11 @@
-FROM gradle:jdk17-corretto-al2023
-
-COPY . /app
+FROM eclipse-temurin:17-jdk AS build
 
 WORKDIR /app
-
+COPY . .
 RUN ./gradlew clean bootJar
 
-COPY build/libs/*.jar app.jar
+FROM eclipse-temurin:17-jdk
+WORKDIR /app
+COPY --from=build /app/build/libs/*.jar app.jar
 
 ENTRYPOINT ["java", "-jar", "app.jar"]
