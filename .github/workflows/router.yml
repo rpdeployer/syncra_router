@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: "Set version of Syncra Parser"
+        description: "Set version of Syncra Router"
         required: true
         default: "1.0.0"
 
