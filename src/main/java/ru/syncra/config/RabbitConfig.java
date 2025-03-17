@@ -66,20 +66,8 @@ public class RabbitConfig {
     }
 
     @Bean
-    public MessageConverter jsonMessageConverter() {
-        Jackson2JsonMessageConverter converter = new Jackson2JsonMessageConverter();
-        converter.setClassMapper(new DefaultClassMapper() {
-            {
-                setDefaultType(Map.class);
-            }
-        });
-        return converter;
-    }
-
-    @Bean
     public RabbitTemplate rabbitTemplate(ConnectionFactory connectionFactory) {
         RabbitTemplate rabbitTemplate = new RabbitTemplate(connectionFactory);
-        rabbitTemplate.setMessageConverter(jsonMessageConverter());
         return rabbitTemplate;
     }
 }

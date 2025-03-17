@@ -4,6 +4,8 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.amqp.core.Message;
+import org.springframework.amqp.core.MessageBuilder;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
@@ -78,12 +80,21 @@ public class MessageController {
 
     private void sendToQueue(String queue, String message) {
         try {
-            rabbitTemplate.convertAndSend(queue, objectMapper.readTree(message));
+            sendRawJson(queue, message);
             logger.info("Сообщение отправлено в очередь {}: {}", queue, message);
         } catch (Exception e) {
             logger.error("Ошибка при обработке JSON для очереди {}: {}", queue, e.getMessage(), e);
             throw new RuntimeException("Ошибка при отправке JSON в RabbitMQ", e);
         }
+    }
+
+    public void sendRawJson(String queueName, String rawJsonMessage) {
+        Message message = MessageBuilder.withBody(rawJsonMessage.getBytes())
+                .setContentType("application/json")
+                .build();
+
+        rabbitTemplate.send(queueName, message);
+        System.out.println("Сообщение отправлено в очередь: " + queueName);
     }
 
 }
