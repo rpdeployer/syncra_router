@@ -79,7 +79,7 @@ jobs:
         run: |
           echo "${{ secrets.SSH_KEY }}" > key.pem
           chmod 600 key.pem
-          ssh -o IdentitiesOnly=yes -o StrictHostKeyChecking=no -i key.pem ${{ secrets.USER }}@${{ secrets.HOST }} << 'EOF'
+          ssh -o IdentitiesOnly=yes -o StrictHostKeyChecking=no -i key.pem ${{ secrets.USER }}@${{ secrets.HOST }} -p ${{ secrets.SSH_PORT }} << 'EOF'
             sudo docker load -i /${{ secrets.USER }}/${{ env.DIR }}/router.tar
           EOF
 
@@ -93,7 +93,7 @@ jobs:
         run: |
           echo "${{ secrets.SSH_KEY }}" > key.pem
           chmod 600 key.pem
-          ssh -o IdentitiesOnly=yes -o StrictHostKeyChecking=no -i key.pem ${{ secrets.USER }}@${{ secrets.HOST }} << 'EOF'
+          ssh -o IdentitiesOnly=yes -o StrictHostKeyChecking=no -i key.pem ${{ secrets.USER }}@${{ secrets.HOST }} -p ${{ secrets.SSH_PORT }} << 'EOF'
             cd /${{ secrets.USER }}/${{ env.DIR }}
             source .env
             sudo docker-compose down -v
