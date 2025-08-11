@@ -86,6 +86,15 @@ jobs:
           echo "${{ secrets[format('{0}_SSH_SECRET', env.ENV_NAME)] }}" > ~/.ssh/id_rsa
           ssh-keyscan -p ${{ secrets[format('{0}_SSH_PORT', env.ENV_NAME)] }} -H ${{ secrets[format('{0}_SSH_HOST', env.ENV_NAME)] }} > ~/.ssh/known_hosts
 
+      - name: Check if already exists
+        run: |
+          ssh ${{ secrets[format('{0}_SSH_USER', env.ENV_NAME)] }}@${{ secrets[format('{0}_SSH_HOST', env.ENV_NAME)] }} -p ${{ secrets[format('{0}_SSH_PORT', env.ENV_NAME)] }} << 'EOF'
+            if [ `docker image ls | grep '${{ env.DOCKER_NAME }}' | awk 'NR>0{print $2}' | grep '${{ env.SERVICE_VERSION }}' ` == '${{ env.SERVICE_VERSION }}' ]; then
+              echo 'Error: Docker image with version ${{ env.SERVICE_VERSION }} already exists!';
+              exit 1;
+            fi
+          EOF
+
       - name: Perform dirs on remote host
         run: |
           ssh ${{ secrets[format('{0}_SSH_USER', env.ENV_NAME)] }}@${{ secrets[format('{0}_SSH_HOST', env.ENV_NAME)] }} -p ${{ secrets[format('{0}_SSH_PORT', env.ENV_NAME)] }} << 'EOF'
