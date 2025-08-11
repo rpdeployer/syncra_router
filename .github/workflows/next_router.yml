@@ -78,13 +78,17 @@ jobs:
 
       - name: Show debug info
         run: |
-          echo $GITHUB_ENV    
+          echo $GITHUB_ENV
+
+      - name: Install ssh keys
+        run: |
+          install -m 600 -D /dev/null ~/.ssh/id_rsa
+          echo "${{ secrets[format('{0}_SSH_SECRET', env.ENV_NAME)] }}" > ~/.ssh/id_rsa
+          ssh-keyscan -p ${{ secrets[format('{0}_SSH_PORT', env.ENV_NAME)] }} -H ${{ secrets[format('{0}_SSH_HOST', env.ENV_NAME)] }} > ~/.ssh/known_hosts
 
       - name: Perform dirs on remote host
         run: |
-          echo "${{ secrets[format('{0}_SSH_SECRET', env.ENV_NAME)] }}" > key.pem
-          chmod 600 key.pem
-          ssh -o StrictHostKeyChecking=no -o IdentitiesOnly=yes -i key.pem ${{ secrets[format('{0}_SSH_USER', env.ENV_NAME)] }}@${{ secrets[format('{0}_SSH_HOST', env.ENV_NAME)] }} -p ${{ secrets[format('{0}_SSH_PORT', env.ENV_NAME)] }} << 'EOF'
+          ssh ${{ secrets[format('{0}_SSH_USER', env.ENV_NAME)] }}@${{ secrets[format('{0}_SSH_HOST', env.ENV_NAME)] }} -p ${{ secrets[format('{0}_SSH_PORT', env.ENV_NAME)] }} << 'EOF'
             mkdir -p ${{ env.SERVICE_CONFIGS_DIR }};
             mkdir -p ${{ env.SERVICE_LOGS_DIR }};
             mkdir -p ${{ env.DB_BACKUP_DIR }};
@@ -101,9 +105,7 @@ jobs:
 
       - name: Copy docker-compose.yml to Server
         run: |
-          echo "${{ secrets[format('{0}_SSH_SECRET', env.ENV_NAME)] }}" > key.pem
-          chmod 600 key.pem
-          scp -P ${{ secrets[format('{0}_SSH_PORT', env.ENV_NAME)] }} -o StrictHostKeyChecking=no -o IdentitiesOnly=yes -i key.pem $DOCKER_TARBALL_NAME ${{ secrets[format('{0}_SSH_USER', env.ENV_NAME)] }}@${{ secrets[format('{0}_SSH_HOST', env.ENV_NAME)] }}:$SERVICE_DIR
+          scp -P ${{ secrets[format('{0}_SSH_PORT', env.ENV_NAME)] }} $DOCKER_TARBALL_NAME ${{ secrets[format('{0}_SSH_USER', env.ENV_NAME)] }}@${{ secrets[format('{0}_SSH_HOST', env.ENV_NAME)] }}:$SERVICE_DIR
 
       - name: Create .env file on Server
         run: |
@@ -114,30 +116,22 @@ jobs:
           echo "RABBIT_USER=${{ secrets[format('{0}_RABBIT_USER', env.ENV_NAME)] }}" >> .env
           echo "RABBIT_VHOST=${{ secrets[format('{0}_RABBIT_VHOST', env.ENV_NAME)] }}" >> .env
           echo "RABBIT_PASSWORD=${{ secrets[format('{0}_RABBIT_PASSWORD', env.ENV_NAME)] }}" >> .env
-          echo "${{ secrets[format('{0}_SSH_SECRET', env.ENV_NAME)] }}" > key.pem
-          chmod 600 key.pem
-          scp -P ${{ secrets[format('{0}_SSH_PORT', env.ENV_NAME)] }} -o StrictHostKeyChecking=no -o IdentitiesOnly=yes -i key.pem .env ${{ secrets[format('{0}_SSH_USER', env.ENV_NAME)] }}@${{ secrets[format('{0}_SSH_HOST', env.ENV_NAME)] }}:$SERVICE_DIR
+          scp -P ${{ secrets[format('{0}_SSH_PORT', env.ENV_NAME)] }} .env ${{ secrets[format('{0}_SSH_USER', env.ENV_NAME)] }}@${{ secrets[format('{0}_SSH_HOST', env.ENV_NAME)] }}:$SERVICE_DIR
 
       - name: Load Container
         run: |
-          echo "${{ secrets[format('{0}_SSH_SECRET', env.ENV_NAME)] }}" > key.pem
-          chmod 600 key.pem
-          ssh -o StrictHostKeyChecking=no -o IdentitiesOnly=yes -i key.pem ${{ secrets[format('{0}_SSH_USER', env.ENV_NAME)] }}@${{ secrets[format('{0}_SSH_HOST', env.ENV_NAME)] }} -p ${{ secrets[format('{0}_SSH_PORT', env.ENV_NAME)] }} << 'EOF'
+          ssh ${{ secrets[format('{0}_SSH_USER', env.ENV_NAME)] }}@${{ secrets[format('{0}_SSH_HOST', env.ENV_NAME)] }} -p ${{ secrets[format('{0}_SSH_PORT', env.ENV_NAME)] }} << 'EOF'
             cd ${{ env.SERVICE_DIR }};
             docker load -i ${{ env.DOCKER_TARBALL_NAME }}
           EOF
 
       - name: Copy docker-compose.yml to Server
         run: |
-          echo "${{ secrets[format('{0}_SSH_SECRET', env.ENV_NAME)] }}" > key.pem
-          chmod 600 key.pem
-          scp -P ${{ secrets[format('{0}_SSH_PORT', env.ENV_NAME)] }} -o StrictHostKeyChecking=no -o IdentitiesOnly=yes -i key.pem $DOCKER_COMPOSE_SOURCE_FILE ${{ secrets[format('{0}_SSH_USER', env.ENV_NAME)] }}@${{ secrets[format('{0}_SSH_HOST', env.ENV_NAME)] }}:$SERVICE_DIR/docker-compose.yml
+          scp -P ${{ secrets[format('{0}_SSH_PORT', env.ENV_NAME)] }} $DOCKER_COMPOSE_SOURCE_FILE ${{ secrets[format('{0}_SSH_USER', env.ENV_NAME)] }}@${{ secrets[format('{0}_SSH_HOST', env.ENV_NAME)] }}:$SERVICE_DIR/docker-compose.yml
 
       - name: Restart docker
         run: |
-          echo "${{ secrets[format('{0}_SSH_SECRET', env.ENV_NAME)] }}" > key.pem
-          chmod 600 key.pem
-          ssh -o StrictHostKeyChecking=no -o IdentitiesOnly=yes -i key.pem ${{ secrets[format('{0}_SSH_USER', env.ENV_NAME)] }}@${{ secrets[format('{0}_SSH_HOST', env.ENV_NAME)] }} -p ${{ secrets[format('{0}_SSH_PORT', env.ENV_NAME)] }} << 'EOF'
+          ssh ${{ secrets[format('{0}_SSH_USER', env.ENV_NAME)] }}@${{ secrets[format('{0}_SSH_HOST', env.ENV_NAME)] }} -p ${{ secrets[format('{0}_SSH_PORT', env.ENV_NAME)] }} << 'EOF'
             cd ${{ env.SERVICE_DIR }};
             source .env
             docker compose down -v
