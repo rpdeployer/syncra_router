@@ -1,0 +1,164 @@
+name: NEXT build and deploy router
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Set version of Syncra Router"
+        required: true
+        default: "1.0.0"
+      skip-tests:
+        type: boolean
+        description: "Skip tests before building"
+        required: true
+        default: false
+      environment:
+        description: 'Target deployment environment'
+        required: true
+        type: choice
+        options:
+          - 'DEV'
+          - 'PROD'
+
+env:
+  HOME_DIR: /syncra
+  PROJECT_NAME: syncra
+  SIMPLE_SERVICE_NAME: router
+
+jobs:
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Run Tests
+        run: ./gradlew clean test
+
+  build:
+    if: ${{ !failure() || github.event.inputs.skip-tests == 'true' }}
+    name: Build and Deploy Docker Image
+    runs-on: ubuntu-latest
+    needs: test
+
+    steps:
+      - name: Perform instance name variable
+        run: |
+          echo "SERVICE_NAME=${{ env.PROJECT_NAME }}-${{ env.SIMPLE_SERVICE_NAME }}" >> $GITHUB_ENV
+
+      - name: Perform service path, env_name, docker and version variables
+        run: |
+          echo "ENV_NAME=${{ github.event.inputs.environment }}" >> $GITHUB_ENV
+          echo "SERVICE_VERSION=${{ github.event.inputs.version || '1.0.0' }}" >> $GITHUB_ENV
+          echo "SERVICE_DIR=$HOME_DIR/services/$SERVICE_NAME" >> $GITHUB_ENV
+          echo "DOCKER_TARBALL_NAME=$SERVICE_NAME.tar" >> $GITHUB_ENV
+          echo "DOCKER_NAME=$PROJECT_NAME/$SIMPLE_SERVICE_NAME" >> $GITHUB_ENV
+          echo "DB_BACKUP_NAME=`date +'%Y-%m-%d-%H-%M-%S'`" >> $GITHUB_ENV
+
+      - name: Perform lower case env and upper case simple service name
+        run: |
+          echo "ENV_NAME_LOWER_CASE=${ENV_NAME,,}" >> $GITHUB_ENV
+
+      - name: Perform versioned service dir variable and appsettings path variables
+        run: |
+          echo "DOCKER_COMPOSE_SOURCE_FILE=docker-compose.$ENV_NAME_LOWER_CASE.yml" >> $GITHUB_ENV
+          echo "VERSIONED_DOCKER_NAME=$DOCKER_NAME:$SERVICE_VERSION" >> $GITHUB_ENV
+          echo "DB_BACKUP_DIR=$HOME_DIR/db_backups" >> $GITHUB_ENV
+
+      - name: Perform versioned dir dependent variable
+        run: |
+          echo "SERVICE_LOGS_DIR=$HOME_DIR/logs/$SIMPLE_SERVICE_NAME" >> $GITHUB_ENV
+
+      - name: Show debug info
+        run: |
+          echo $GITHUB_ENV    
+
+      - name: Perform dirs on remote host
+        run: |
+          echo "${{ secrets[format('{0}_SSH_SECRET', env.ENV_NAME)] }}" > key.pem
+          chmod 600 key.pem
+          ssh -o StrictHostKeyChecking=no -o IdentitiesOnly=yes -i key.pem ${{ secrets[format('{0}_SSH_USER', env.ENV_NAME)] }}@${{ secrets[format('{0}_SSH_HOST', env.ENV_NAME)] }} -p ${{ secrets[format('{0}_SSH_PORT', env.ENV_NAME)] }} << 'EOF'
+            mkdir -p ${{ env.SERVICE_CONFIGS_DIR }};
+            mkdir -p ${{ env.SERVICE_LOGS_DIR }};
+            mkdir -p ${{ env.DB_BACKUP_DIR }};
+            mkdir -p ${{ env.SERVICE_DIR }};
+          EOF
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Build Docker Image
+        run: |
+          docker build -f $SOURCE_DIR/Dockerfile -t $VERSIONED_DOCKER_NAME .
+          docker save -o $DOCKER_TARBALL_NAME $VERSIONED_DOCKER_NAME
+
+      - name: Copy docker-compose.yml to Server
+        run: |
+          echo "${{ secrets[format('{0}_SSH_SECRET', env.ENV_NAME)] }}" > key.pem
+          chmod 600 key.pem
+          scp -P ${{ secrets[format('{0}_SSH_PORT', env.ENV_NAME)] }} -o StrictHostKeyChecking=no -o IdentitiesOnly=yes -i key.pem $DOCKER_TARBALL_NAME ${{ secrets[format('{0}_SSH_USER', env.ENV_NAME)] }}@${{ secrets[format('{0}_SSH_HOST', env.ENV_NAME)] }}:$SERVICE_DIR
+
+      - name: Create .env file on Server
+        run: |
+          echo "ROUTER_VERSION=$SERVICE_VERSION" > .env
+          echo "ROUTER_LOGS_PATH=$SERVICE_LOGS_DIR" >> .env
+          echo "RABBIT_HOST=${{ secrets[format('{0}_RABBIT_HOST', env.ENV_NAME)] }}" >> .env
+          echo "RABBIT_PORT=${{ secrets[format('{0}_RABBIT_PORT', env.ENV_NAME)] }}" >> .env
+          echo "RABBIT_USER=${{ secrets[format('{0}_RABBIT_USER', env.ENV_NAME)] }}" >> .env
+          echo "RABBIT_VHOST=${{ secrets[format('{0}_RABBIT_VHOST', env.ENV_NAME)] }}" >> .env
+          echo "RABBIT_PASSWORD=${{ secrets[format('{0}_RABBIT_PASSWORD', env.ENV_NAME)] }}" >> .env
+          echo "${{ secrets[format('{0}_SSH_SECRET', env.ENV_NAME)] }}" > key.pem
+          chmod 600 key.pem
+          scp -P ${{ secrets[format('{0}_SSH_PORT', env.ENV_NAME)] }} -o StrictHostKeyChecking=no -o IdentitiesOnly=yes -i key.pem .env ${{ secrets[format('{0}_SSH_USER', env.ENV_NAME)] }}@${{ secrets[format('{0}_SSH_HOST', env.ENV_NAME)] }}:$SERVICE_DIR
+
+      - name: Load Container
+        run: |
+          echo "${{ secrets[format('{0}_SSH_SECRET', env.ENV_NAME)] }}" > key.pem
+          chmod 600 key.pem
+          ssh -o StrictHostKeyChecking=no -o IdentitiesOnly=yes -i key.pem ${{ secrets[format('{0}_SSH_USER', env.ENV_NAME)] }}@${{ secrets[format('{0}_SSH_HOST', env.ENV_NAME)] }} -p ${{ secrets[format('{0}_SSH_PORT', env.ENV_NAME)] }} << 'EOF'
+            cd ${{ env.SERVICE_DIR }};
+            docker load -i ${{ env.DOCKER_TARBALL_NAME }}
+          EOF
+
+      - name: Copy docker-compose.yml to Server
+        run: |
+          echo "${{ secrets[format('{0}_SSH_SECRET', env.ENV_NAME)] }}" > key.pem
+          chmod 600 key.pem
+          scp -P ${{ secrets[format('{0}_SSH_PORT', env.ENV_NAME)] }} -o StrictHostKeyChecking=no -o IdentitiesOnly=yes -i key.pem $DOCKER_COMPOSE_SOURCE_FILE ${{ secrets[format('{0}_SSH_USER', env.ENV_NAME)] }}@${{ secrets[format('{0}_SSH_HOST', env.ENV_NAME)] }}:$SERVICE_DIR/docker-compose.yml
+
+      - name: Make DB backup
+        run: |
+          echo "${{ secrets[format('{0}_SSH_SECRET', env.ENV_NAME)] }}" > key.pem
+          chmod 600 key.pem
+          ssh -o StrictHostKeyChecking=no -o IdentitiesOnly=yes -i key.pem ${{ secrets[format('{0}_SSH_USER', env.ENV_NAME)] }}@${{ secrets[format('{0}_SSH_HOST', env.ENV_NAME)] }} -p ${{ secrets[format('{0}_SSH_PORT', env.ENV_NAME)] }} << 'EOF'
+            cd ${{ env.DB_BACKUP_DIR }}
+            PGPASSWORD="${{ secrets[format('{0}_DB_PASSWORD', env.ENV_NAME)] }}" pg_basebackup -D ${{ env.DB_BACKUP_NAME }} -Ft -z -U ${{ secrets[format('{0}_DB_USER', env.ENV_NAME)] }} -h ${{ secrets[format('{0}_DB_HOST', env.ENV_NAME)] }} -p ${{ secrets[format('{0}_DB_PORT', env.ENV_NAME)] }} --wal-method=stream --progress --verbose
+          EOF
+
+      - name: Restart docker
+        run: |
+          echo "${{ secrets[format('{0}_SSH_SECRET', env.ENV_NAME)] }}" > key.pem
+          chmod 600 key.pem
+          ssh -o StrictHostKeyChecking=no -o IdentitiesOnly=yes -i key.pem ${{ secrets[format('{0}_SSH_USER', env.ENV_NAME)] }}@${{ secrets[format('{0}_SSH_HOST', env.ENV_NAME)] }} -p ${{ secrets[format('{0}_SSH_PORT', env.ENV_NAME)] }} << 'EOF'
+            cd ${{ env.SERVICE_DIR }};
+            source .env
+            docker compose down -v
+            docker compose up -d --build
+          EOF
+
+      - name: Compress DB backup
+        run: |
+          echo "${{ secrets[format('{0}_SSH_SECRET', env.ENV_NAME)] }}" > key.pem
+          chmod 600 key.pem
+          ssh -o StrictHostKeyChecking=no -o IdentitiesOnly=yes -i key.pem ${{ secrets[format('{0}_SSH_USER', env.ENV_NAME)] }}@${{ secrets[format('{0}_SSH_HOST', env.ENV_NAME)] }} -p ${{ secrets[format('{0}_SSH_PORT', env.ENV_NAME)] }} << 'EOF'
+            cd ${{ env.DB_BACKUP_DIR }}
+            tar cjf ${{ env.DB_BACKUP_NAME }}.tar.bz2 ${{ env.DB_BACKUP_NAME }} 
+            rm -fr ${{ env.DB_BACKUP_NAME }}
+          EOF
