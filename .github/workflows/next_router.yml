@@ -89,7 +89,7 @@ jobs:
       - name: Check if already exists
         run: |
           ssh ${{ secrets[format('{0}_SSH_USER', env.ENV_NAME)] }}@${{ secrets[format('{0}_SSH_HOST', env.ENV_NAME)] }} -p ${{ secrets[format('{0}_SSH_PORT', env.ENV_NAME)] }} << 'EOF'
-            if [ `docker image ls | grep '${{ env.DOCKER_NAME }}' | awk 'NR>0{print $2}' | grep '${{ env.SERVICE_VERSION }}' ` == '${{ env.SERVICE_VERSION }}' ]; then
+            if [ "`docker image ls | grep '${{ env.DOCKER_NAME }}' | awk 'NR>0{print $2}' | grep '${{ env.SERVICE_VERSION }}'`" == '${{ env.SERVICE_VERSION }}' ]; then
               echo 'Error: Docker image with version ${{ env.SERVICE_VERSION }} already exists!';
               exit 1;
             fi
