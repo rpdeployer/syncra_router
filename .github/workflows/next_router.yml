@@ -96,7 +96,7 @@ jobs:
 
       - name: Build Docker Image
         run: |
-          docker build -f $SOURCE_DIR/Dockerfile -t $VERSIONED_DOCKER_NAME .
+          docker build -f Dockerfile -t $VERSIONED_DOCKER_NAME .
           docker save -o $DOCKER_TARBALL_NAME $VERSIONED_DOCKER_NAME
 
       - name: Copy docker-compose.yml to Server
@@ -133,15 +133,6 @@ jobs:
           chmod 600 key.pem
           scp -P ${{ secrets[format('{0}_SSH_PORT', env.ENV_NAME)] }} -o StrictHostKeyChecking=no -o IdentitiesOnly=yes -i key.pem $DOCKER_COMPOSE_SOURCE_FILE ${{ secrets[format('{0}_SSH_USER', env.ENV_NAME)] }}@${{ secrets[format('{0}_SSH_HOST', env.ENV_NAME)] }}:$SERVICE_DIR/docker-compose.yml
 
-      - name: Make DB backup
-        run: |
-          echo "${{ secrets[format('{0}_SSH_SECRET', env.ENV_NAME)] }}" > key.pem
-          chmod 600 key.pem
-          ssh -o StrictHostKeyChecking=no -o IdentitiesOnly=yes -i key.pem ${{ secrets[format('{0}_SSH_USER', env.ENV_NAME)] }}@${{ secrets[format('{0}_SSH_HOST', env.ENV_NAME)] }} -p ${{ secrets[format('{0}_SSH_PORT', env.ENV_NAME)] }} << 'EOF'
-            cd ${{ env.DB_BACKUP_DIR }}
-            PGPASSWORD="${{ secrets[format('{0}_DB_PASSWORD', env.ENV_NAME)] }}" pg_basebackup -D ${{ env.DB_BACKUP_NAME }} -Ft -z -U ${{ secrets[format('{0}_DB_USER', env.ENV_NAME)] }} -h ${{ secrets[format('{0}_DB_HOST', env.ENV_NAME)] }} -p ${{ secrets[format('{0}_DB_PORT', env.ENV_NAME)] }} --wal-method=stream --progress --verbose
-          EOF
-
       - name: Restart docker
         run: |
           echo "${{ secrets[format('{0}_SSH_SECRET', env.ENV_NAME)] }}" > key.pem
@@ -151,14 +142,4 @@ jobs:
             source .env
             docker compose down -v
             docker compose up -d --build
-          EOF
-
-      - name: Compress DB backup
-        run: |
-          echo "${{ secrets[format('{0}_SSH_SECRET', env.ENV_NAME)] }}" > key.pem
-          chmod 600 key.pem
-          ssh -o StrictHostKeyChecking=no -o IdentitiesOnly=yes -i key.pem ${{ secrets[format('{0}_SSH_USER', env.ENV_NAME)] }}@${{ secrets[format('{0}_SSH_HOST', env.ENV_NAME)] }} -p ${{ secrets[format('{0}_SSH_PORT', env.ENV_NAME)] }} << 'EOF'
-            cd ${{ env.DB_BACKUP_DIR }}
-            tar cjf ${{ env.DB_BACKUP_NAME }}.tar.bz2 ${{ env.DB_BACKUP_NAME }} 
-            rm -fr ${{ env.DB_BACKUP_NAME }}
           EOF
