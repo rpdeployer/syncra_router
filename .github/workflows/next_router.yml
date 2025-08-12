@@ -145,5 +145,5 @@ jobs:
             source .env
             docker compose down -v
             docker compose up -d --build
-            docker images --format "{{.ID}}\t{{.CreatedAt}}\t{{.Repository}}\t{{.Tag}}" | grep 'syncra/${{ env.SIMPLE_SERVICE_NAME }}' | sort -k2 | tail -n +11 | awk '{print $1}' | xargs -r docker rmi -f
+            docker images --format "{{.ID}}\t{{.CreatedAt}}\t{{.Repository}}\t{{.Tag}}" | grep 'syncra/${{ env.SIMPLE_SERVICE_NAME }}' | sort -k2 -r | tail -n +11 | awk '{print $1}' | xargs -r docker rmi -f
           EOF
