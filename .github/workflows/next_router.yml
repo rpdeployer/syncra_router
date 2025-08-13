@@ -112,7 +112,7 @@ jobs:
           docker build -f Dockerfile -t $VERSIONED_DOCKER_NAME .
           docker save -o $DOCKER_TARBALL_NAME $VERSIONED_DOCKER_NAME
 
-      - name: Copy docker-compose.yml to Server
+      - name: Copy image tarball to Server
         run: |
           scp -P ${{ secrets[format('{0}_SSH_PORT', env.ENV_NAME)] }} $DOCKER_TARBALL_NAME ${{ secrets[format('{0}_SSH_USER', env.ENV_NAME)] }}@${{ secrets[format('{0}_SSH_HOST', env.ENV_NAME)] }}:$SERVICE_DIR
 
