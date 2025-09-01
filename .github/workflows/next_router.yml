@@ -60,11 +60,17 @@ jobs:
             echo "SERVICE_DIR_NAME=${{ env.PROJECT_NAME }}_`echo '${{ env.SIMPLE_SERVICE_NAME }}' | sed 's/-/_/g'`" >> $GITHUB_ENV
           fi
 
+      - name: Checkout code
+        uses: actions/checkout@v4
+
       - name: Perform service path, env_name, docker and version variables
         run: |
           echo "ENV_NAME=${{ github.event.inputs.environment }}" >> $GITHUB_ENV
-          echo "SERVICE_VERSION=${{ github.event.inputs.version || '1.0.0' }}" >> $GITHUB_ENV
-          echo "DOCKER_TARBALL_NAME=$SERVICE_NAME.tar" >> $GITHUB_ENV
+          if [ '${{ github.event.inputs.environment }}' == 'DEV' ]; then
+            echo "SERVICE_VERSION=`git rev-parse --short HEAD`" >> $GITHUB_ENV
+          else
+            echo "SERVICE_VERSION=${{ github.event.inputs.version || '1.0.0' }}" >> $GITHUB_ENV
+          fi          echo "DOCKER_TARBALL_NAME=$SERVICE_NAME.tar" >> $GITHUB_ENV
           echo "DOCKER_NAME=$PROJECT_NAME/$SIMPLE_SERVICE_NAME" >> $GITHUB_ENV
 
           if [ '${{ github.event.inputs.environment }}' == 'DEV' ]; then
@@ -112,9 +118,6 @@ jobs:
             mkdir -p ${{ env.SERVICE_LOGS_DIR }};
             mkdir -p ${{ env.SERVICE_DIR }};
           EOF
-
-      - name: Checkout code
-        uses: actions/checkout@v4
 
       - name: Build Docker Image
         run: |
