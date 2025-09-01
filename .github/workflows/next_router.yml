@@ -21,6 +21,8 @@ on:
           - 'PROD'
           - 'PROD_WL_PAYX'
 
+run-name: Deploy version ${{ inputs.version }} to ${{ inputs.environment }} by @${{ github.actor }}
+
 env:
   HOME_DIR: /syncra
   PROJECT_NAME: syncra
