@@ -72,7 +72,8 @@ jobs:
             echo "SERVICE_VERSION=`git rev-parse --short HEAD`" >> $GITHUB_ENV
           else
             echo "SERVICE_VERSION=${{ github.event.inputs.version || '1.0.0' }}" >> $GITHUB_ENV
-          fi          echo "DOCKER_TARBALL_NAME=$SERVICE_NAME.tar" >> $GITHUB_ENV
+          fi          
+          echo "DOCKER_TARBALL_NAME=$SERVICE_NAME.tar" >> $GITHUB_ENV
           echo "DOCKER_NAME=$PROJECT_NAME/$SIMPLE_SERVICE_NAME" >> $GITHUB_ENV
 
           if [ '${{ github.event.inputs.environment }}' == 'DEV' ]; then
