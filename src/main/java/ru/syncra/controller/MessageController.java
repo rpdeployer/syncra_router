@@ -9,10 +9,8 @@ import org.springframework.amqp.core.MessageBuilder;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+import ru.syncra.utils.SignatureVerifier;
 
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -45,7 +43,15 @@ public class MessageController {
     }
 
     @PostMapping("/sms")
-    public ResponseEntity<Map<String, Boolean>> sendSms(@RequestBody String message) throws JsonProcessingException {
+    public ResponseEntity<Map<String, Boolean>> sendSms(
+            @RequestHeader("X-Timestamp") long timestamp,
+            @RequestHeader("X-Salt") String salt,
+            @RequestHeader("X-Signature") String signature,
+            @RequestBody String message) throws Exception {
+        if (!SignatureVerifier.isTimestampValid(timestamp) || !SignatureVerifier.verify(String.valueOf(timestamp), salt, signature)) {
+            return ResponseEntity.status(401).body(Map.of("success", false));
+        }
+
         logger.info("Получен запрос на отправку Sms/Notification: {}", message);
 
         try {
@@ -63,7 +69,15 @@ public class MessageController {
     }
 
     @PostMapping("/log")
-    public ResponseEntity<Map<String, Boolean>> sendLog(@RequestBody String message) throws JsonProcessingException {
+    public ResponseEntity<Map<String, Boolean>> sendLog(
+            @RequestHeader("X-Timestamp") long timestamp,
+            @RequestHeader("X-Salt") String salt,
+            @RequestHeader("X-Signature") String signature,
+            @RequestBody String message) throws Exception {
+        if (!SignatureVerifier.isTimestampValid(timestamp) || !SignatureVerifier.verify(String.valueOf(timestamp), salt, signature)) {
+            return ResponseEntity.status(401).body(Map.of("success", false));
+        }
+
         logger.info("Получен запрос на отправку Log: {}", message);
 
         try {
