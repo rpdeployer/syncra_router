@@ -90,6 +90,7 @@ jobs:
         run: |
           echo "DOCKER_COMPOSE_SOURCE_FILE=docker-compose.$ENV_NAME_LOWER_CASE.yml" >> $GITHUB_ENV
           echo "VERSIONED_DOCKER_NAME=$DOCKER_NAME:$SERVICE_VERSION" >> $GITHUB_ENV
+          echo "ROLLBACK_SOURCE_FILE=rollback.sh" >> $GITHUB_ENV
 
       - name: Perform versioned dir dependent variable
         run: |
@@ -152,6 +153,10 @@ jobs:
       - name: Copy docker-compose.yml to Server
         run: |
           scp -P ${{ secrets[format('{0}_SSH_PORT', env.ENV_NAME)] }} $DOCKER_COMPOSE_SOURCE_FILE ${{ secrets[format('{0}_SSH_USER', env.ENV_NAME)] }}@${{ secrets[format('{0}_SSH_HOST', env.ENV_NAME)] }}:$SERVICE_DIR/docker-compose.yml
+
+      - name: Copy rollback script to Server
+        run: |
+          scp -P ${{ secrets[format('{0}_SSH_PORT', env.ENV_NAME)] }} $ROLLBACK_SOURCE_FILE ${{ secrets[format('{0}_SSH_USER', env.ENV_NAME)] }}@${{ secrets[format('{0}_SSH_HOST', env.ENV_NAME)] }}:$SERVICE_DIR/rollback.sh
 
       - name: Restart docker
         run: |
